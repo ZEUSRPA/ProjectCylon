@@ -147,7 +147,7 @@ public class PlayerController : MonoBehaviour
     private void MovePlayer()
     {
         Vector3 movement = new Vector3(_moveLR, 0, _moveFB).normalized * _playerSpeed;
-        movement.y = _playerRigidbody.velocity.y + _moveUp * _jumpForce;
+        //movement.y = _playerRigidbody.velocity.y + _moveUp * _jumpForce;
         movement = transform.rotation * movement;
         _playerRigidbody.velocity = movement;
         _moveFB = 0;
