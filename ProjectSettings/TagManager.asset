@@ -4,11 +4,12 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Bullet
   - Enemy
-  - EnemyBullet
-  - Misil
   - Upgrade
+  - EnemyBat
+  - Garlic
+  - Garlic2
+  - Misil
   layers:
   - Default
   - TransparentFX

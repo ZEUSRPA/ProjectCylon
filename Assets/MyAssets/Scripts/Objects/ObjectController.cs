@@ -18,7 +18,7 @@ public class ObjectController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.tag == "Bullet" || other.tag == "EnemyBullet" || other.tag == "Misil")
+        if(other.tag == "Garlic" || other.tag == "EnemyBat" || other.tag == "Garlic2")
         {
             Destroy(other.gameObject);
         }

@@ -21,14 +21,17 @@ public class EnemyController : MonoBehaviour
     private NavMeshAgent _enemyNav;
     private Animator _enemyAnim;
     private bool _isWalking=false;
-    private float _fireRate=0.3f;
-    private bool _destroyed = false;
+    private float _fireRate=5f;
+    private bool _killed = false;
+    private bool _isAttacking = false;
+    private float _batWait = 1.3f;
+    private int _batLeft = 10;
 
     private GameObject _weapon;
     [SerializeField]
-    private GameObject _bullet;
-    private GameObject _bulletHolder;
-    private float _bulletSpeed=3000;
+    private GameObject _enemyBat;
+    private GameObject _enemyBatHolder;
+    //private float _enemyBatSpeed=600;
 
     [SerializeField]
     private Image _life;
@@ -36,45 +39,74 @@ public class EnemyController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
-        _audioManager = GameObject.FindObjectOfType<AudioManager>();
-        _enemyAnim = GetComponentInChildren<Animator>();
         _player = GameObject.Find("Player");
-        _playerController = _player.GetComponent<PlayerController>();
-        _enemyNav = transform.GetComponent<NavMeshAgent>();
-        _weapon = transform.GetChild(0).gameObject;
-        _bulletHolder = _weapon.transform.GetChild(0).gameObject;
-        _enemiesManager = GameObject.FindObjectOfType<EnemiesManager>();
-        _lifeCanvas = GetComponentInChildren<Canvas>();
-        _life.fillAmount = _health / _maxHealth;
+        if (_player != null)
+        {
+            _audioManager = GameObject.FindObjectOfType<AudioManager>();
+            _enemyAnim = GetComponentInChildren<Animator>();
+            _playerController = _player.GetComponent<PlayerController>();
+            _enemyNav = transform.GetComponent<NavMeshAgent>();
+            _weapon = transform.GetChild(0).gameObject;
+            _enemyBatHolder = _weapon.transform.GetChild(0).gameObject;
+            _enemiesManager = GameObject.FindObjectOfType<EnemiesManager>();
+            _lifeCanvas = GetComponentInChildren<Canvas>();
+            _life.fillAmount = _health / _maxHealth;
+
+        }
+        else
+        {
+            _killed = true;
+        }
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (_player != null) 
+        if (_player != null && !_killed) 
         {
             _lifeCanvas.transform.LookAt(_player.transform);
-            _enemyNav.SetDestination(_player.transform.position);
-            if (!_isWalking)
+            if (_isAttacking)
             {
-                _isWalking = true;
-                _enemyAnim.SetBool("isWalking", true);
+                if (_batWait <= 0)
+                {
+                    _batWait = .2f;
+                    Fire();
+                    _batLeft--;
+                }
+                _batWait -= Time.deltaTime;
+                if (_batLeft == 0)
+                {
+                    _batWait = 1.3f;
+                    _batLeft = 10;
+                    _isAttacking = false;
+                    _enemyNav.isStopped = false;
+                    
+                }
+                
+                _fireRate = 10f;
             }
-            if (_fireRate < 0)
+            else
             {
-                _fireRate = 0.2f;
-                Fire();
+                
+                _enemyNav.SetDestination(_player.transform.position);
+                if (!_isWalking)
+                {
+                    _isWalking = true;
+                    _enemyAnim.SetBool("isWalking", true);
+                }
 
+                if (_fireRate < 0)
+                {
+                    _enemyNav.isStopped = true;
+                    _isWalking = false;
+                    _isAttacking = true;
+                    _enemyAnim.SetBool("isWalking", false);
+                    _enemyAnim.SetTrigger("attacking");
+                }
+                _fireRate -= Time.deltaTime;
             }
-            _fireRate -= Time.deltaTime;
-        
-            if (_enemyNav.velocity.magnitude/_enemyNav.speed==0 && _isWalking)
-            {
-                _isWalking = false;
-                _enemyAnim.SetBool("isWalking", false);
-            }
+
         }
         
     }
@@ -87,23 +119,24 @@ public class EnemyController : MonoBehaviour
 
     void Fire()
     {
-        GameObject tempBullet = Instantiate(_bullet, _bulletHolder.transform.position, _bulletHolder.transform.rotation) as GameObject;
-        Rigidbody tempRigidBodyBullet = tempBullet.GetComponent<Rigidbody>();
-        tempRigidBodyBullet.AddForce(tempRigidBodyBullet.transform.forward * _bulletSpeed);
-        Destroy(tempBullet, 1f);
+        var auxpos = _enemyBatHolder.transform.position;
+        auxpos.y = 0;
+        GameObject tempBullet = Instantiate(_enemyBat, auxpos, _enemyBatHolder.transform.rotation) as GameObject;
     }
 
     public void HealthUpdate(float damage)
     {
         _health -= damage;
         _life.fillAmount = _health / _maxHealth;
-        if (_health <= 0 && !_destroyed)
+        if (_health <= 0 && !_killed)
         {
-            _destroyed = true;
+            _audioManager.PlayAudio("Noo");
+            _enemyAnim.SetTrigger("killed");
+            _killed = true;
+            _enemyAnim.SetBool("isWalking", false);
             _playerController.UpdateScore(_scoreByKill * _round);
             _enemiesManager.UpdateEnemies();
-            _enemyAnim.SetTrigger("Destroyed");
-            Destroy(gameObject, 1f);
+            Destroy(gameObject, 2f);
 
         }
     }
@@ -115,14 +148,14 @@ public class EnemyController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.tag == "Bullet")
+        if(other.tag == "Garlic")
         {
-            Bullet aux = other.GetComponent<Bullet>();
+            Garlic aux = other.GetComponent<Garlic>();
             HealthUpdate(aux.damage);
-        }else if(other.tag == "Misil")
+        }else if(other.tag == "Garlic2")
         {
-            _audioManager.PlayAudio("Explosion");
-            Misil aux = other.GetComponent<Misil>();
+            
+            Garlic2 aux = other.GetComponent<Garlic2>();
             HealthUpdate(aux.damage);
             
         }

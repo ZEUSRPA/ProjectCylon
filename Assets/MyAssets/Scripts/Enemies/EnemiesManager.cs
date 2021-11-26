@@ -13,11 +13,16 @@ public class EnemiesManager : MonoBehaviour
     private float _enemies=0;
     private float _round = 0;
 
-    private float _enemiesHealth = 20;
+    private float _enemiesHealth = 16;
 
     private static EnemiesManager _instance;
 
     private float _waitTime = 5f;
+    private float _waiting = 2f;
+
+    private bool _creating = false;
+    private int _x = -1;
+    private int _i = 2;
 
 
 
@@ -34,31 +39,49 @@ public class EnemiesManager : MonoBehaviour
     void Start()
     {
         _uIController = GameObject.Find("UI").GetComponentInChildren<UIController>();
-        _uIController.ShowMessage("Supervivencia");
+        _uIController.ShowMessage("Matar o Morir");
     }
 
-    void CreateEnemies()
-    {
-        _round++;
-        _uIController.ShowMessage("Ronda " + _round);
-        foreach (GameObject x in _enemyBases)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                CreateEnemy(x);
-            }
-        }
-    }
 
     // Update is called once per frame
     void Update()
     {
-        if (_enemies == 0 && _waitTime<0)
+        
+        if (_enemies == 0 && _waitTime<=0 && _creating==false)
         {
             _enemiesHealth += 4;
-            CreateEnemies();
+            _round++;
+            _uIController.ShowMessage("Ronda " + _round);
+            _creating = true;
+            _x = _enemyBases.Length-1;
+        }
+        else
+        {
+
+            if (_x >= 0)
+            {
+                if (_i > 0)
+                {
+                    if (_waiting <= 0)
+                    {
+                        CreateEnemy(_enemyBases[_x]);
+                        _waiting = 5f;
+                        _i--;
+                    }
+                }
+                if (_i == 0)
+                {
+                    _i = 2;
+                    _x--;
+                }
+            }
+            else
+            {
+                _creating = false;
+            }
         }
         _waitTime -= Time.deltaTime;
+        _waiting -= Time.deltaTime;
     }
 
     public void UpdateEnemies()
